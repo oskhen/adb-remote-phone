@@ -6,11 +6,18 @@ import math
 
 # adb shell settings put system show_touches 1
 
+def getResolution():
+    output = str(subprocess.run(["adb", "exec-out", "wm", "size"], capture_output=True).stdout)
+    output = output.split(" ")[2].split("x")
+    width = int(output[0])
+    height = int(output[1][0:4])
+    return width, height
+    
+
 #- Config
 marginFactor = 0.9
 
-phoneWidth = 1440
-phoneHeight = 2880
+phoneWidth, phoneHeight = getResolution()
 
 displayHeight = 1080
 
@@ -22,15 +29,15 @@ displayWidth = math.floor(phoneWidth * (displayHeight / phoneHeight))
 #|----------
 
 def onClick(event, x, y, flags, param):
-    
+
     #|- Resize touch events to display resolution
     x = math.floor((x/displayWidth) * phoneWidth)
     y = math.floor((y/displayHeight) * phoneHeight)
     #|------------
 
     if (event == cv2.EVENT_LBUTTONDOWN):
-        print(f"{x}, {y}")
-        print(subprocess.run(["adb", "exec-out", "input", "tap", str(x), str(y)]))
+        print(f"touch event at {x}, {y}")
+        subprocess.run(["adb", "exec-out", "input", "tap", str(x), str(y)])
 
 
 
