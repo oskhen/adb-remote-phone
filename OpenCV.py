@@ -3,41 +3,52 @@ import sys
 import numpy as np
 import subprocess
 import math
+import re
+from screeninfo import get_monitors
+
+# TODO: 
+# x/y scaling is off
+# auto-display resolution
+# initADB (is it needed?)
+# adb path
+# swipe
+# fix delays (onClick every time mouse is moved in window!)
 
 # adb shell settings put system show_touches 1
 
+def initADB():
+    pass
+
 def getResolution():
-    output = str(subprocess.run(["adb", "exec-out", "wm", "size"], capture_output=True).stdout)
-    output = output.split(" ")[2].split("x")
-    width = int(output[0])
-    height = int(output[1][0:4])
+    output = str(subprocess.run(["adb", "exec-out", "wm", "size"], capture_output=True).stdout).split("\\n")[0]
+    width, height = map(int, re.sub(r'[^0-9x]', '', output).split("x"))
     return width, height
     
 
 #- Config
 marginFactor = 0.9
 
-phoneWidth, phoneHeight = getResolution()
-
 displayHeight = 1080
 
 #|---------
 
 #- Resize calculations
-displayHeight = math.floor(displayHeight*marginFactor)
-displayWidth = math.floor(phoneWidth * (displayHeight / phoneHeight))
+phoneWidth, phoneHeight = getResolution()
+displayHeight = round(displayHeight*marginFactor)
+scaling = displayHeight / phoneHeight
+displayWidth = round(phoneWidth * scaling)
 #|----------
 
 def onClick(event, x, y, flags, param):
 
-    #|- Resize touch events to display resolution
-    x = math.floor((x/displayWidth) * phoneWidth)
-    y = math.floor((y/displayHeight) * phoneHeight)
-    #|------------
-
     if (event == cv2.EVENT_LBUTTONDOWN):
+
         print(f"touch event at {x}, {y}")
         subprocess.run(["adb", "exec-out", "input", "tap", str(x), str(y)])
+
+
+
+
 
 
 
@@ -49,14 +60,14 @@ cap = cv2.VideoCapture("/dev/stdin")
 if (cap.isOpened()==False):
     print("Failed to open stream")
 
-cv2.namedWindow("main", cv2.WINDOW_AUTOSIZE)
+cv2.namedWindow("main", cv2.WINDOW_NORMAL)
+cv2.resizeWindow("main", displayWidth, displayHeight)
 cv2.setMouseCallback("main", onClick)
 
 while cap.isOpened():
 
     ret, frame = cap.read()
     if ret == True:
-        frame = cv2.resize(frame, (displayWidth, displayHeight))
 
         cv2.imshow('main', frame)
         
