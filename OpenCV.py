@@ -1,18 +1,19 @@
-from os import path
+#from os import path
 import cv2
-import sys
-import numpy as np
+#import sys
+#import numpy as np
 import subprocess
-import math
+#import math
 import re
 from screeninfo import get_monitors
 import argparse
+from timeit import default_timer
 
 # TODO: 
-# swipe
+# Change duration timings?
 # fix delays (onClick every time mouse is moved in window!)
 
-# adb shell settings put system show_touches 1
+startTime, startX, startY = [0]*3
 
 def initADB():
     global path
@@ -42,18 +43,40 @@ def initParser():
 
     return parser
 
+def swipe(x1, y1, x2, y2, duration):
+    duration = int((duration*1000))
+    #print(f"swipe {x1} {y1} {x2} {y2} {duration}")
+    subprocess.run([path, "exec-out", "input", "swipe", str(x1), str(y1), str(x2), str(y2), str(duration)])
+
+def touch(x, y):
+    #print(f"touch event at {x}, {y}")
+    subprocess.run([path, "exec-out", "input", "tap", str(x), str(y)])
+    
 
 def onClick(event, x, y, flags, param):
-    global path
+    global startTime
+    global startX
+    global startY
 
     if (event == cv2.EVENT_LBUTTONDOWN):
 
-        print(f"touch event at {x}, {y}")
-        subprocess.run([path, "exec-out", "input", "tap", str(x), str(y)])
+        startTime = default_timer()
+        startX = x
+        startY = y
+
+    elif (event == cv2.EVENT_LBUTTONUP):
+
+        time = default_timer() - startTime
+
+        if startX == x and startY == y:
+            touch(x, y)
+        else:
+            swipe(startX, startY, x, y, time)
 
 
 def main(config):
     global path
+
 
     #|- Config
     marginFactor = config.Margin
@@ -104,4 +127,3 @@ if __name__ == "__main__":
     parser = initParser()
     config = parser.parse_args()
     main(config)
-
