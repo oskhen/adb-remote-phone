@@ -10,6 +10,18 @@ import argparse
 import time
 from timeit import default_timer
 
+import os
+
+
+    
+def isWindows():
+    return(os.name == 'nt')
+
+if isWindows():
+    import win32pipe, win32file
+    from threading import Thread
+
+
 # TODO: 
 # Change duration timings?
 # fix delays (onClick every time mouse is moved in window!)
@@ -17,6 +29,25 @@ from timeit import default_timer
 # Fix internal piping
 
 startTime, startX, startY = [0]*3
+
+def runPipe(PipePath):    
+        p = win32pipe.CreateNamedPipe(PipePath,
+                                        win32pipe.PIPE_ACCESS_DUPLEX,
+                                        win32pipe.PIPE_TYPE_MESSAGE | win32pipe.PIPE_WAIT,
+                                        1, 1024, 1024, 0, None)        
+        win32pipe.ConnectNamedPipe(p, None)    
+        # with open("D:\\Streams\\mystream.ts", 'rb') as input:
+        #     while True:
+        #         data = input.read(1024)
+        #         if not data:
+        #             break
+        #         win32file.WriteFile(p, data)  
+        while(True):
+            #print("hej")
+            data = sys.stdin.buffer.read(4096)
+            if not data:
+                break
+            win32file.WriteFile(p,data)
 
 def initADB():
     global path
@@ -98,7 +129,14 @@ def main(config):
     print(f"Phone resolution: {phoneWidth}x{phoneHeight}")
     print(f"Converting to display resolution: {displayWidth}x{displayHeight}")
 
-    cap = cv2.VideoCapture("/dev/stdin")
+    _thr = 0
+    pipeName = "/dev/stdin"
+    if(isWindows()):
+        pipeName = r'\\.\\pipe\\myNamedPipe'
+        _thr = Thread(target=runPipe,args=[pipeName])
+        _thr.start()
+
+    cap = cv2.VideoCapture(pipeName)
 
     if (cap.isOpened()==False):
         print("Failed to open stream")
