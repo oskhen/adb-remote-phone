@@ -1,17 +1,20 @@
 #from os import path
 import cv2
-#import sys
+import sys
 #import numpy as np
 import subprocess
 #import math
 import re
 from screeninfo import get_monitors
 import argparse
+import time
 from timeit import default_timer
 
 # TODO: 
 # Change duration timings?
 # fix delays (onClick every time mouse is moved in window!)
+# Requires USB Debugging?
+# Fix internal piping
 
 startTime, startX, startY = [0]*3
 
@@ -39,19 +42,18 @@ def getResolution():
 def initParser():
     parser = argparse.ArgumentParser(description="Control your Android phone remotely through a USB connection.")
     parser.add_argument("-adb", "--adb-path", action="store", type=str, dest="PATH", help="Path to ADB. Defaults to adb", default="adb")
-    parser.add_argument("-m", "--margin", action="store", type=int, dest="Margin", help="Height margin in percentage of screen utilised. Defaults to 0.9", default=0.9)
+    parser.add_argument("-m", "--margin", action="store", type=float, dest="Margin", help="Height margin in percentage of screen utilised. Defaults to 0.9", default=0.9)
 
     return parser
 
 def swipe(x1, y1, x2, y2, duration):
     duration = int((duration*1000))
-    #print(f"swipe {x1} {y1} {x2} {y2} {duration}")
+    print(f"swipe {x1} {y1} {x2} {y2} {duration}")
     subprocess.run([path, "exec-out", "input", "swipe", str(x1), str(y1), str(x2), str(y2), str(duration)])
 
 def touch(x, y):
-    #print(f"touch event at {x}, {y}")
-    subprocess.run([path, "exec-out", "input", "tap", str(x), str(y)])
-    
+    print(f"touch event at {x}, {y}")
+    subprocess.run([path, "exec-out", "input", "tap", str(x), str(y)])    
 
 def onClick(event, x, y, flags, param):
     global startTime
@@ -76,7 +78,6 @@ def onClick(event, x, y, flags, param):
 
 def main(config):
     global path
-
 
     #|- Config
     marginFactor = config.Margin
