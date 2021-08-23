@@ -5,7 +5,8 @@ import argparse
 def main(config):
     screenrecording = subprocess.Popen(["adb", "exec-out", "screenrecord", "--output-format=h264", "-"], stdout=subprocess.PIPE)
 
-    OpenCV = subprocess.Popen([config.python, "OpenCV.py", "-adb", config.PATH, "-m", config.Margin], stdin=screenrecording.stdout)
+    OpenCV = subprocess.run([config.python, "OpenCV.py", "-adb", config.PATH, "-m", config.Margin], stdin=screenrecording.stdout)
+    
 
 
 def initParser():
@@ -21,4 +22,5 @@ if __name__ == "__main__":
     parser = initParser()
     config = parser.parse_args()
     main(config)
+
     
