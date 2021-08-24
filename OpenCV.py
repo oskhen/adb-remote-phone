@@ -9,10 +9,8 @@ from screeninfo import get_monitors
 import argparse
 import time
 from timeit import default_timer
-
 import os
 import threading
-from threading import Thread
 
     
 def isWindows():
@@ -24,14 +22,13 @@ if isWindows():
 
 # TODO: 
 # Change duration timings?
-# fix delays (onClick every time mouse is moved in window!)
 # Requires USB Debugging?
 # Fix internal piping
 
 startTime, startX, startY = [0]*3
 
 # https://stackoverflow.com/a/65191619
-class VideoBufferCleanerThread(Thread):
+class VideoBufferCleanerThread(threading.Thread):
     def __init__(self, video, name='video-buffer-cleaner-thread'):
         self.video = video
         self.last_frame = None
@@ -43,20 +40,14 @@ class VideoBufferCleanerThread(Thread):
             threading.Lock()
             ret, self.last_frame = self.video.read()
 
+# https://answers.opencv.org/question/28744/python-cv2videocapture-from-subprocesspipe/
 def runPipe(PipePath):    
         p = win32pipe.CreateNamedPipe(PipePath,
                                         win32pipe.PIPE_ACCESS_DUPLEX,
                                         win32pipe.PIPE_TYPE_MESSAGE | win32pipe.PIPE_WAIT,
                                         1, 1024, 1024, 0, None)        
         win32pipe.ConnectNamedPipe(p, None)    
-        # with open("D:\\Streams\\mystream.ts", 'rb') as input:
-        #     while True:
-        #         data = input.read(1024)
-        #         if not data:
-        #             break
-        #         win32file.WriteFile(p, data)  
         while(True):
-            #print("hej")
             data = sys.stdin.buffer.read(4096)
             if not data:
                 break
@@ -147,7 +138,7 @@ def main(config):
     pipeName = "/dev/stdin"
     if(isWindows()):
         pipeName = r'\\.\\pipe\\myNamedPipe'
-        _thr = Thread(target=runPipe,args=[pipeName])
+        _thr = threading.Thread(target=runPipe,args=[pipeName])
         _thr.start()
 
     cap = cv2.VideoCapture(pipeName)
