@@ -8,3 +8,7 @@ Requires [adb](https://developer.android.com/studio/releases/platform-tools) and
 ### Python
 
 Python requirements can be installed from with the command `pip install -r requirements.txt` or equivalent. Alternatively, the program uses the OpenCV library for screen rendering and the module `screeninfo` to get the display resolution.
+
+## Instructions
+
+Run the program from the wrapper, using the command `python3 Wrapper.py` on Linux or `python Wrapper.py -p python` on Windows.
