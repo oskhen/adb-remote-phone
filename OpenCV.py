@@ -11,7 +11,8 @@ import time
 from timeit import default_timer
 
 import os
-
+import threading
+from threading import Thread
 
     
 def isWindows():
@@ -19,7 +20,6 @@ def isWindows():
 
 if isWindows():
     import win32pipe, win32file
-    from threading import Thread
 
 
 # TODO: 
@@ -29,6 +29,19 @@ if isWindows():
 # Fix internal piping
 
 startTime, startX, startY = [0]*3
+
+# https://stackoverflow.com/a/65191619
+class VideoBufferCleanerThread(Thread):
+    def __init__(self, video, name='video-buffer-cleaner-thread'):
+        self.video = video
+        self.last_frame = None
+        super(VideoBufferCleanerThread, self).__init__(name=name)
+        self.start()
+
+    def run(self):
+        while True:
+            threading.Lock()
+            ret, self.last_frame = self.video.read()
 
 def runPipe(PipePath):    
         p = win32pipe.CreateNamedPipe(PipePath,
@@ -107,6 +120,7 @@ def onClick(event, x, y, flags, param):
             swipe(startX, startY, x, y, time)
 
 
+
 def main(config):
     global path
 
@@ -138,6 +152,8 @@ def main(config):
 
     cap = cv2.VideoCapture(pipeName)
 
+    cap_cleaner = VideoBufferCleanerThread(cap)
+
     if (cap.isOpened()==False):
         print("Failed to open stream")
 
@@ -147,16 +163,14 @@ def main(config):
 
     while cap.isOpened():
 
-        ret, frame = cap.read()
-        if ret == True:
+        if cap_cleaner.last_frame is not None:
 
-            cv2.imshow('main', frame)
+            threading.Lock()
+
+            cv2.imshow('main', cap_cleaner.last_frame)
             
             if cv2.waitKey(25) & 0xFF == ord('q'):
                 break
-        
-        else:
-            break
 
     cap.release()
     cv2.destroyAllWindows()
